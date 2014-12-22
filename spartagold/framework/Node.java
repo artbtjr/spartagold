@@ -241,7 +241,7 @@ public class Node
 			PeerConnection peerconn = new PeerConnection(pd);
 			PeerMessage tosend = new PeerMessage(msgtype, data);
 			peerconn.sendData(tosend);
-			LoggerUtil.getLogger().fine("Sent " + tosend + "/" + peerconn);
+			LoggerUtil.getLogger().fine("Sent " + tosend.getMsgType() + "/" + peerconn);
 			
 			peerconn.close();
 		}
@@ -270,7 +270,7 @@ public class Node
 			PeerConnection peerconn = new PeerConnection(pd);
 			PeerMessage tosend = new PeerMessage(msgtype, msgdata);
 			peerconn.sendData(tosend);
-			LoggerUtil.getLogger().fine("Sent " + tosend + "/" + peerconn);
+			LoggerUtil.getLogger().fine("Sent " + tosend.getMsgType() + "/" + peerconn);
 			if (waitreply) 
 			{
 				PeerMessage onereply = peerconn.recvData();
@@ -306,7 +306,7 @@ public class Node
 
 			while (!shutdown) 
 			{
-				LoggerUtil.getLogger().fine("Listening...");
+				//LoggerUtil.getLogger().fine("Listening...");
 				try 
 				{
 					Socket clientsock = s.accept();
@@ -317,7 +317,7 @@ public class Node
 				}
 				catch (SocketTimeoutException e) 
 				{
-					LoggerUtil.getLogger().fine("" + e);
+					//LoggerUtil.getLogger().fine("" + e);
 					continue;
 				}
 			} // end while (!shutdown);

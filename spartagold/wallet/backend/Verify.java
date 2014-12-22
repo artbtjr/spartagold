@@ -2,10 +2,14 @@ package spartagold.wallet.backend;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+
+import spartagold.framework.LoggerUtil;
 
 /**
- * Contains a transaction verification method used to check the block chain if a transaction
- * is legitimate, and a block verification method used to check if a solution if legitimate.
+ * Contains a transaction verification method used to check the block chain if a
+ * transaction is legitimate, and a block verification method used to check if a
+ * solution if legitimate.
  * 
  * @author Art Tucay Jr., Paul Portela
  * @version 1.0.0
@@ -14,12 +18,12 @@ import java.security.NoSuchAlgorithmException;
 public class Verify
 {
 
-	private static final int NUMOFZEROES = 4;
+	public static final int NUMBER_OF_ZEROES = 15;
 
 	/**
-	 * Verifies a transaction by checking if the sender has the funds to send the amount
-	 * specified in the transaction
-	 *
+	 * Verifies a transaction by checking if the sender has the funds to send
+	 * the amount specified in the transaction
+	 * 
 	 * @param transaction
 	 * @param bc
 	 * @return a boolean value of the status of verification
@@ -30,62 +34,85 @@ public class Verify
 		String senderPubKey = transaction.getSenderPubKey();
 		byte[] signed = transaction.getSigned();
 		String trans = transaction.toString();
-		double amount = transaction.getAmount();
 
 		VerifySignature ver = new VerifySignature(senderPubKey, signed, trans);
 
 		if (ver.isVerified())
 		{
-			int tempAmount = 0;
+			System.out.println("");
+			System.out.println("Verify: temp amount = 0, creating ArrayList unspentIds");
+			double tmpAmount = 0;
+			ArrayList<String> unspentIds = transaction.getUnspentIds();
 			for (int i = 0; i < bc.getChainSize(); i++)
 			{
 				Block tempBlock = bc.getChain().get(i);
+				System.out.println("Verify: Block ID: " + tempBlock.getId());
+				System.out.println("Verify: Block solution: " + tempBlock.getSolution());
 				for (Transaction t : tempBlock.getTransactions())
 				{
-					if (t.getReceiverPubKey() == senderPubKey
-							&& t.isValid() == true)
+					if (unspentIds == null)
+						return false;
+					System.out.println("Verify: Transaction ID: " + t.getID());
+					System.out.println("Verify: Transaction amount: " + t.getAmount());
+					System.out.println("Verify: UnspentIds size: " + unspentIds.size());
+					for (int j = 0; j < unspentIds.size(); j++)
 					{
-						tempAmount += t.getAmount();
-					}
-					if (tempAmount >= amount)
-					{
-						System.out.println("Transaction verified.");
-						return true;
+						System.out.println("Verify: UnspentId: " + unspentIds.get(j));
+						if (unspentIds.get(j).equals(t.getID()))
+						{
+							System.out.println("Verify: unspent ID matches transaction ID");
+							if (t.isSpent())
+							{
+								System.out.println("Verify: transaction spent: " + t.isSpent());
+								return false;
+							}
+							else
+							{
+								tmpAmount += t.getAmount();
+								System.out.println("Verify: temp amount is now: " + tmpAmount);
+							}
+						}
 					}
 				}
 			}
-		} 
-		System.out.println("Transaction not verified.");
+			if (tmpAmount >= transaction.getAmount())
+			{
+				System.out.println("Verify: Temp amount >= transaction amount.");
+				return true;
+			}
+		}
+		System.out.println("Verify: transaction not verified.");
 		return false;
 	}
 
 	/**
 	 * Verify block by rehashing the block's string and the solution.
 	 * 
-	 * @param block 		Block object containing solution
+	 * @param block
+	 *            Block object containing solution
 	 * @return a boolean value of the status of verification
 	 * @throws NoSuchAlgorithmException
 	 */
 	public static boolean verifyBlock(Block block) throws NoSuchAlgorithmException
 	{
-		String zeros = new String(new char[NUMOFZEROES]).replace("\0", "0");
+		String zeros = new String(new char[NUMBER_OF_ZEROES]).replace("\0", "0");
 		String solution = block.getSolution();
 		String blockString = block.toString();
-		String hash = hash(blockString + solution).toString();
-
+		String hash = hash(blockString + solution).toString().substring(0, NUMBER_OF_ZEROES);
 		if (zeros.equals(hash))
 		{
-			System.out.println("Block verified.");
+			LoggerUtil.getLogger().fine("Block verified.");
 			return true;
 		}
-		System.out.println("Block not verified.");
+		LoggerUtil.getLogger().fine("Block not verified.");
 		return false;
 	}
 
 	/**
 	 * Hash function in SHA-256. ToString objects and concatenate to get hash.
 	 * 
-	 * @param data			String of data to be hashed in SHA-256
+	 * @param data
+	 *            String of data to be hashed in SHA-256
 	 * @return StringBuilder object containing the hashed data
 	 * @throws NoSuchAlgorithmException
 	 */
